@@ -42,7 +42,7 @@ class MailerApp:
 
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
-        root.title(f"Bulk Mailer  v{__version__}")
+        root.title(f"Bulk Email Sending  v{__version__}")
         root.geometry("960x820")
         root.minsize(820, 640)
 
@@ -214,7 +214,7 @@ class MailerApp:
         # Header.
         header = ttk.Frame(self.root)
         header.pack(fill="x", padx=12, pady=(12, 0))
-        ttk.Label(header, text="Bulk Mailer", style="SectionLg.TLabel").pack(anchor="w")
+        ttk.Label(header, text="Bulk Email Sending", style="SectionLg.TLabel").pack(anchor="w")
         ttk.Label(
             header, style="Hint.TLabel", justify="left", wraplength=900,
             text=(
