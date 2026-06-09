@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# PyInstaller build output
+build/
+dist/
+*.spec.bak
+
+# Local state / scratch
+*.sqlite
+*.sqlite-*
+*.eml
+_mail_drafts/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Sample data that may contain real recipients — never commit
+samples/private/
+*_private.xlsx

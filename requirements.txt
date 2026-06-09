@@ -1,0 +1,7 @@
+openpyxl==3.1.5
+requests==2.33.1
+keyring==25.7.0
+sv-ttk==2.6.1
+pywin32==312
+msal==1.37.0
+pyinstaller==6.20.0
