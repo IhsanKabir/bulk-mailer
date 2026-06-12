@@ -47,16 +47,19 @@ class MailerApp:
         root.minsize(820, 640)
 
         # ----- Mailer state -----
+        # Restore the last-used transport + mode so the app reopens as it was
+        # left (a fresh install still defaults to Outlook + drafts — the safe pair).
+        ui_state = self._load_ui_state()
         self.mail_mapping_path = tk.StringVar()
         self.mail_attach_dir = tk.StringVar()
         self.mail_subject = tk.StringVar()
-        self.mail_mode = tk.StringVar(value="draft")   # "draft" | "send"
+        self.mail_mode = tk.StringVar(value=ui_state.get("mode", "draft"))   # "draft" | "send"
         self.mail_delay_s = tk.DoubleVar(value=1.0)
         self.mail_skip_sent = tk.BooleanVar(value=True)
         # Transport default: Outlook desktop — sends from whatever account is
         # already added to Outlook, needing neither SMTP basic-auth nor admin
         # Graph consent (both commonly blocked by locked-down M365 tenants).
-        self.mail_transport = tk.StringVar(value="outlook")
+        self.mail_transport = tk.StringVar(value=ui_state.get("transport", "outlook"))
         self.mail_smtp_preset = tk.StringVar(value="Gmail / Google Workspace")
         self.mail_smtp_host = tk.StringVar(value="smtp.gmail.com")
         self.mail_smtp_port = tk.IntVar(value=587)
@@ -401,6 +404,10 @@ class MailerApp:
         self.mail_status = ttk.Label(act, text="Idle.", style="Hint.TLabel")
         self.mail_status.pack(side="left", padx=(12, 0))
         self.mail_mode.trace_add("write", lambda *_a: self._mail_sync_run_label())
+        # Persist transport + mode whenever they change, so the next launch
+        # reopens the app exactly as it was last used.
+        self.mail_mode.trace_add("write", lambda *_a: self._save_ui_state())
+        self.mail_transport.trace_add("write", lambda *_a: self._save_ui_state())
 
         # ----- Preview grid -----
         prev = self._section(parent, "Preview")
@@ -442,6 +449,32 @@ class MailerApp:
             pass
         self._setup_styles()
         self.btn_theme.configure(text="☀  Light" if self._theme_is_dark else "☾  Dark")
+
+    # ------------------------------------------------------------------
+    # UI-state persistence (transport + mode survive restarts)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _load_ui_state() -> dict:
+        """Last-used transport/mode from disk; {} on first run or any error."""
+        import json
+        try:
+            data = json.loads(config.UI_STATE_FILE.read_text(encoding="utf-8"))
+            return data if isinstance(data, dict) else {}
+        except (OSError, ValueError):
+            return {}
+
+    def _save_ui_state(self) -> None:
+        """Best-effort persist — a failed write must never break the GUI."""
+        import json
+        try:
+            config.APP_DIR.mkdir(parents=True, exist_ok=True)
+            config.UI_STATE_FILE.write_text(json.dumps({
+                "transport": self.mail_transport.get(),
+                "mode": self.mail_mode.get(),
+            }), encoding="utf-8")
+        except OSError:
+            log.warning("Could not save UI state", exc_info=True)
 
     # ------------------------------------------------------------------
     # Transport switching + credentials

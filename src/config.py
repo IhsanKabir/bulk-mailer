@@ -16,6 +16,12 @@ MAILER_LOG_DB = APP_DIR / "mailer_log.sqlite"
 # Last-used Outlook "send from" account, so the picker pre-selects it.
 OUTLOOK_ACCOUNT_FILE = APP_DIR / "outlook_account.txt"
 
+# Last-used transport ("outlook"/"graph"/"smtp") + mode ("draft"/"send"), so the
+# app reopens exactly as last used. Added after a real incident: the defaults
+# (Outlook + Create drafts) made a user believe mails were SENT when only
+# drafts were created on a machine where desktop Outlook can't even sign in.
+UI_STATE_FILE = APP_DIR / "ui_state.json"
+
 # Microsoft Graph device-code token cache (see graph_mailer._token_cache_path).
 # graph_mailer reads `config.APP_DIR`, so the token lands beside the rest.
 
