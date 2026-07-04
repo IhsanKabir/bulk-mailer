@@ -18,6 +18,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from . import __version__, config, graph_mailer, mailer_client, mailer_io, mailer_split
 from .mailer_log import MailerLog
+from .whatsapp_gui import WhatsAppMixin
 
 log = logging.getLogger(__name__)
 
@@ -27,8 +28,8 @@ MSG_MAIL_DONE = "mail_done"           # payload: dict
 MSG_MAIL_ERROR = "mail_error"
 
 
-class MailerApp:
-    """The whole application: one window, one mailer panel."""
+class MailerApp(WhatsAppMixin):
+    """The whole application: one window, one mailer panel + WhatsApp blast."""
 
     # Semantic palette — single source of truth for coloured widgets.
     _COLOR_PRIMARY = "#0078D4"
@@ -498,6 +499,9 @@ class MailerApp:
         prog = self._section(parent, "Progress")
         self.mail_progress = ttk.Progressbar(prog, mode="determinate", maximum=1)
         self.mail_progress.pack(fill="x", padx=2, pady=2)
+
+        # ----- WhatsApp Blast (free, sends from the user's own number) -----
+        self._build_whatsapp_section(parent)
 
         self._mail_sync_transport()
 
@@ -1072,6 +1076,9 @@ class MailerApp:
         self.root.after(100, self._poll_queue)
 
     def _handle_msg(self, kind: str, payload: object) -> None:
+        # WhatsApp-blast messages are handled by the shared mixin.
+        if kind.startswith("wa_") and self._wa_handle_msg(kind, payload):
+            return
         if kind == MSG_MAIL_PROGRESS:
             idx, total, to, status, row_index = payload  # type: ignore[misc]
             self.mail_progress.configure(maximum=total, value=idx)

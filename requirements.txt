@@ -5,3 +5,8 @@ sv-ttk==2.6.1
 pywin32==312
 msal==1.37.0
 pyinstaller==6.20.0
+# WhatsApp Blast drives the user's installed Chrome/Edge via Playwright.
+# We do NOT run `playwright install` — the app uses the system browser
+# (channel="chrome"/"msedge"), so no ~150 MB Chromium is bundled; only
+# Playwright's own driver ships in the exe.
+playwright==1.49.1

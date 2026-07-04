@@ -28,7 +28,9 @@ hiddenimports = [
 
 # Pull in keyring backends + sv_ttk's Tcl theme resources (collect_all gets
 # the .tcl files PyInstaller's analyzer misses, so set_theme() works frozen).
-for pkg in ["keyring", "sv_ttk"]:
+# Playwright ships a node "driver" as package data the analyzer can't see —
+# collect_all bundles it so the WhatsApp Blast can drive the system browser.
+for pkg in ["keyring", "sv_ttk", "playwright"]:
     pkg_datas, pkg_bins, pkg_hi = collect_all(pkg)
     datas += pkg_datas
     binaries += pkg_bins
