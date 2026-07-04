@@ -41,6 +41,22 @@ One row per recipient. Header names are matched case-insensitively; only
 - The body is a template — `{name}` (or any column, e.g. `{Route}`) is
   filled per row. Unknown placeholders are left as-is, never crash a run.
 
+## Split & Send by email column (no mapping needed)
+
+Don't want to prepare a mapping or separate files? Keep **one main sheet**
+where each data row carries the recipient's email address in some column:
+
+1. Pick the main Excel → sheet → **email column** (auto-guessed).
+2. Pick a folder for the split files; optionally set **CC/BCC** applied to
+   every message.
+3. **Create split files** writes one workbook per address (only that
+   recipient's rows, header kept) — or **Split + load into mailer** arms the
+   normal Preview → Test → Run flow with those files attached.
+
+Rows with a blank/invalid address are parked in `_UNMATCHED_ROWS.xlsx` and
+never sent. A cell holding several addresses (`a@x.com; b@y.com`) sends the
+row to each. Extra placeholders: `{email}` `{rows}` `{file}`.
+
 ## Send via (pick one)
 
 | Transport | Use when | Notes |
