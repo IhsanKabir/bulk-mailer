@@ -6,4 +6,4 @@ Standalone single-window app. No sign-in, no recipient cap — large runs
 are bounded only by your mail provider's daily send limit.
 """
 
-__version__ = "1.1.0"
+__version__ = "1.2.0"
