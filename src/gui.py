@@ -240,7 +240,19 @@ class MailerApp(WhatsAppMixin, HealthMixin):
         self._build_mailer_panel(ttk.Frame(self.root))
 
     def _build_mailer_panel(self, _unused: ttk.Frame) -> None:
-        parent = self._make_scrollable(self.root)
+        # Email + WhatsApp as sub-tabs so the WhatsApp option is discoverable
+        # instead of buried at the bottom of the email form.
+        nb = ttk.Notebook(self.root)
+        nb.pack(fill="both", expand=True)
+        email_tab = ttk.Frame(nb)
+        wa_tab = ttk.Frame(nb)
+        nb.add(email_tab, text="Email")
+        nb.add(wa_tab, text="WhatsApp")
+        self._build_email_panel(email_tab)
+        self._build_whatsapp_section(self._make_scrollable(wa_tab))
+
+    def _build_email_panel(self, container: ttk.Frame) -> None:
+        parent = self._make_scrollable(container)
 
         # ----- Inputs -----
         io_body = self._section(parent, "Mapping + attachments")
@@ -503,9 +515,6 @@ class MailerApp(WhatsAppMixin, HealthMixin):
         prog = self._section(parent, "Progress")
         self.mail_progress = ttk.Progressbar(prog, mode="determinate", maximum=1)
         self.mail_progress.pack(fill="x", padx=2, pady=2)
-
-        # ----- WhatsApp Blast (free, sends from the user's own number) -----
-        self._build_whatsapp_section(parent)
 
         self._mail_sync_transport()
 
