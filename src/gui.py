@@ -1170,6 +1170,8 @@ class MailerApp(WhatsAppMixin):
             ):
                 return
             self._mail_stop_flag.set()
+        # Stop any WhatsApp blast + close the browser session.
+        self._wa_shutdown()
         self.root.destroy()
 
 
