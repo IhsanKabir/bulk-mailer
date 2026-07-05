@@ -21,7 +21,6 @@ from src.whatsapp_io import (
 
 @pytest.mark.parametrize("raw,expected", [
     ("01800000001", "8801800000001"),      # BD local, leading 0 -> 880
-    ("1800000001", "8801800000001"),       # missing leading 0
     ("+8801800000001", "8801800000001"),   # already intl with +
     ("8801800000001", "8801800000001"),    # already intl no +
     ("008801800000001", "8801800000001"),  # 00 intl prefix
@@ -35,6 +34,23 @@ def test_normalize_bd_mobiles(raw, expected):
 @pytest.mark.parametrize("raw", ["", "   ", "abc", "12345", "01711"])
 def test_normalize_rejects_junk_and_too_short(raw):
     assert normalize_phone(raw, default_cc="880") is None
+
+
+@pytest.mark.parametrize("raw", [
+    "1800000001",          # bare, no leading 0, <11 digits -> AMBIGUOUS, reject
+    "4155551234",          # a US 10-digit bare number must NOT become +880...
+    "415-555-1234 x99",    # extension letters -> reject, never fabricate a number
+    "call me 0181",        # stray text
+])
+def test_normalize_rejects_ambiguous_and_extensions(raw):
+    # These previously risked dialling a real WRONG number (e.g. 880+US number).
+    assert normalize_phone(raw, default_cc="880") is None
+
+
+def test_normalize_sanitizes_country_code():
+    # a '+' or spaces in the country-code field must not corrupt the number
+    assert normalize_phone("01800000001", default_cc="+880") == "8801800000001"
+    assert normalize_phone("01800000001", default_cc="  880 ") == "8801800000001"
 
 
 @pytest.mark.parametrize("raw,expected", [
