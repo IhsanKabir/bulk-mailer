@@ -18,6 +18,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from . import __version__, config, graph_mailer, mailer_client, mailer_io, mailer_split
 from .mailer_log import MailerLog
+from .health_gui import HealthMixin
 from .whatsapp_gui import WhatsAppMixin
 
 log = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ MSG_MAIL_DONE = "mail_done"           # payload: dict
 MSG_MAIL_ERROR = "mail_error"
 
 
-class MailerApp(WhatsAppMixin):
+class MailerApp(WhatsAppMixin, HealthMixin):
     """The whole application: one window, one mailer panel + WhatsApp blast."""
 
     # Semantic palette — single source of truth for coloured widgets.
@@ -467,6 +468,9 @@ class MailerApp(WhatsAppMixin):
             style="Danger.TButton",
         )
         self.btn_mail_stop.pack(side="left", padx=(8, 0))
+        ttk.Button(act, text="Health / Diagnostics",
+                   command=lambda: self._open_health_dialog("mailer")).pack(
+            side="left", padx=(8, 0))
         self.mail_status = ttk.Label(act, text="Idle.", style="Hint.TLabel")
         self.mail_status.pack(side="left", padx=(12, 0))
         self.mail_mode.trace_add("write", lambda *_a: self._mail_sync_run_label())
@@ -1070,14 +1074,21 @@ class MailerApp(WhatsAppMixin):
         try:
             while True:
                 kind, payload = self._msg_queue.get_nowait()
-                self._handle_msg(kind, payload)
+                # A raising handler must never kill the pump (would freeze all
+                # background messaging for the rest of the session).
+                try:
+                    self._handle_msg(kind, payload)
+                except Exception:  # noqa: BLE001
+                    log.exception("message handler failed for %r", kind)
         except queue.Empty:
             pass
         self.root.after(100, self._poll_queue)
 
     def _handle_msg(self, kind: str, payload: object) -> None:
-        # WhatsApp-blast messages are handled by the shared mixin.
+        # WhatsApp-blast + Health messages are handled by shared mixins.
         if kind.startswith("wa_") and self._wa_handle_msg(kind, payload):
+            return
+        if kind.startswith("health_") and self._health_handle_msg(kind, payload):
             return
         if kind == MSG_MAIL_PROGRESS:
             idx, total, to, status, row_index = payload  # type: ignore[misc]
