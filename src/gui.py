@@ -18,7 +18,7 @@ from tkinter import filedialog, messagebox, simpledialog, ttk
 
 from . import (
     __version__, config, graph_mailer, guide_view, mailer_client, mailer_io,
-    mailer_split,
+    mailer_split, updater,
 )
 from .mailer_log import MailerLog
 from .health_gui import HealthMixin
@@ -226,6 +226,10 @@ class MailerApp(WhatsAppMixin, HealthMixin):
             status_frm, text="☾  Dark", command=self._toggle_theme, width=10,
         )
         self.btn_theme.pack(side="right", padx=4, pady=2)
+        self.btn_check_updates = ttk.Button(
+            status_frm, text="Check for updates", command=self._check_for_updates,
+        )
+        self.btn_check_updates.pack(side="right", padx=4, pady=2)
 
         # Header.
         header = ttk.Frame(self.root)
@@ -539,6 +543,47 @@ class MailerApp(WhatsAppMixin, HealthMixin):
             pass
         self._setup_styles()
         self.btn_theme.configure(text="☀  Light" if self._theme_is_dark else "☾  Dark")
+        self._toggle_theme_guide_rebuild()
+
+    # ------------------------------------------------------------------
+    # Check for updates (GitHub-only; opens the download page, no self-swap)
+    # ------------------------------------------------------------------
+
+    def _check_for_updates(self) -> None:
+        self.btn_check_updates.configure(state="disabled", text="Checking…")
+
+        def worker() -> None:
+            info = updater.check_for_update()
+            self.root.after(0, lambda: self._show_update_result(info))
+
+        threading.Thread(target=worker, daemon=True).start()
+
+    def _show_update_result(self, info) -> None:
+        try:
+            self.btn_check_updates.configure(state="normal", text="Check for updates")
+        except tk.TclError:
+            return
+        if info is None:
+            messagebox.showwarning(
+                "Check for updates",
+                "Couldn't reach the update server right now — check your internet "
+                f"and try again. You can also visit:\n{updater.RELEASES_PAGE}")
+            return
+        if not info.is_newer:
+            messagebox.showinfo(
+                "Check for updates", f"You're on the latest version (v{__version__}).")
+            return
+        notes = info.notes.strip()
+        if len(notes) > 700:
+            notes = notes[:700].rstrip() + " …"
+        if messagebox.askyesno(
+                "Update available",
+                f"A newer version is available: v{info.latest_version}\n"
+                f"(You have v{__version__}.)\n\n{notes}\n\n"
+                "Open the download page in your browser now?"):
+            updater.open_download(info)
+
+    def _toggle_theme_guide_rebuild(self) -> None:
         # The Guide's Canvas boxes use theme-fixed colors — rebuild it (cheap,
         # static content) so it re-themes with everything else.
         guide_tab = getattr(self, "_guide_tab", None)
