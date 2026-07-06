@@ -16,7 +16,10 @@ import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, simpledialog, ttk
 
-from . import __version__, config, graph_mailer, mailer_client, mailer_io, mailer_split
+from . import (
+    __version__, config, graph_mailer, guide_view, mailer_client, mailer_io,
+    mailer_split,
+)
 from .mailer_log import MailerLog
 from .health_gui import HealthMixin
 from .whatsapp_gui import WhatsAppMixin
@@ -244,12 +247,17 @@ class MailerApp(WhatsAppMixin, HealthMixin):
         # instead of buried at the bottom of the email form.
         nb = ttk.Notebook(self.root)
         nb.pack(fill="both", expand=True)
+        self._nb = nb
         email_tab = ttk.Frame(nb)
         wa_tab = ttk.Frame(nb)
+        guide_tab = ttk.Frame(nb)
         nb.add(email_tab, text="Email")
         nb.add(wa_tab, text="WhatsApp")
+        nb.add(guide_tab, text="❔ Guide")
         self._build_email_panel(email_tab)
         self._build_whatsapp_section(self._make_scrollable(wa_tab))
+        self._guide_tab = guide_tab
+        guide_view.build_guide(guide_tab, self, "mailer")
 
     def _build_email_panel(self, container: ttk.Frame) -> None:
         parent = self._make_scrollable(container)
@@ -531,6 +539,13 @@ class MailerApp(WhatsAppMixin, HealthMixin):
             pass
         self._setup_styles()
         self.btn_theme.configure(text="☀  Light" if self._theme_is_dark else "☾  Dark")
+        # The Guide's Canvas boxes use theme-fixed colors — rebuild it (cheap,
+        # static content) so it re-themes with everything else.
+        guide_tab = getattr(self, "_guide_tab", None)
+        if guide_tab is not None and guide_tab.winfo_exists():
+            for child in guide_tab.winfo_children():
+                child.destroy()
+            guide_view.build_guide(guide_tab, self, "mailer")
 
     # ------------------------------------------------------------------
     # UI-state persistence (transport + mode survive restarts)
